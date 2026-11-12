@@ -1,14 +1,36 @@
 @echo off
-rem blackhole-lib build: static lib, DLL, and examples.  Run by full path (a different build.bat is on PATH).
+rem blackhole-lib build: static lib, DLL and examples into build\
+rem Needs the Vulkan SDK (VULKAN_SDK) and Visual Studio with C++ tools.
 setlocal
 cd /d "%~dp0"
 
 if not defined VULKAN_SDK (
-    echo VULKAN_SDK is not set
+    echo VULKAN_SDK is not set - install the Vulkan SDK from https://vulkan.lunarg.com
     exit /b 1
 )
-set "VCVARS=C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Auxiliary\Build\vcvars64.bat"
+
+rem ---- MSVC: reuse a developer prompt, else vswhere, else scan Visual Studio folders
+if defined VCINSTALLDIR goto :have_vc
+set "VCVARS="
+set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+if exist "%VSWHERE%" (
+    for /f "usebackq delims=" %%i in (`"%VSWHERE%" -latest -prerelease -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do (
+        if exist "%%i\VC\Auxiliary\Build\vcvars64.bat" set "VCVARS=%%i\VC\Auxiliary\Build\vcvars64.bat"
+    )
+)
+if not defined VCVARS (
+    for /d %%d in ("%ProgramFiles%\Microsoft Visual Studio\*") do (
+        for /d %%e in ("%%d\*") do (
+            if exist "%%e\VC\Auxiliary\Build\vcvars64.bat" set "VCVARS=%%e\VC\Auxiliary\Build\vcvars64.bat"
+        )
+    )
+)
+if not defined VCVARS (
+    echo Visual Studio C++ tools not found - run this from a "x64 Native Tools" prompt
+    exit /b 1
+)
 call "%VCVARS%" >nul 2>&1 || exit /b 1
+:have_vc
 
 if not exist build\gen mkdir build\gen
 if not exist build\obj\static mkdir build\obj\static

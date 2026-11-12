@@ -10,6 +10,7 @@
 //   viewer.exe --test   off-screen, click-through run of 60 frames, prints timing
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
+#define _CRT_SECURE_NO_WARNINGS
 #include <windows.h>
 #include <windowsx.h>
 
